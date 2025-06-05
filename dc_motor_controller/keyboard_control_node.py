@@ -83,7 +83,7 @@ class KeyboardControlNode(Node):
         """ตั้งค่า keyboard สำหรับรับ input แบบ real-time"""
         if sys.stdin.isatty():
             self.old_settings = termios.tcgetattr(sys.stdin)
-            tty.cbreak(sys.stdin.fileno())
+            tty.setcbreak(sys.stdin.fileno())
     
     def restore_keyboard(self):
         """คืนค่า keyboard settings เดิม"""
