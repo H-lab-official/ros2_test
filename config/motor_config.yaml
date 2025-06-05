@@ -1,0 +1,36 @@
+# DC Motor Controller Configuration
+motor_controller:
+  ros__parameters:
+    # GPIO Pin Configuration (BCM numbering)
+    pwm_pin: 32          # GPIO pin for PWM control
+    direction_pin: 33    # GPIO pin for direction control
+    ground_pin: 25       # Ground reference pin
+    
+    # PWM Configuration
+    pwm_frequency: 1000  # PWM frequency in Hz
+    max_duty_cycle: 100  # Maximum duty cycle percentage
+    min_duty_cycle: 0    # Minimum duty cycle percentage
+    
+    # Motor Parameters
+    max_speed: 100.0     # Maximum speed percentage
+    acceleration_limit: 50.0  # Maximum acceleration rate (% per second)
+    deceleration_limit: 100.0 # Maximum deceleration rate (% per second)
+    
+    # Safety Parameters
+    timeout_ms: 1000     # Command timeout in milliseconds
+    emergency_stop: true # Enable emergency stop functionality
+    
+    # Topic Names
+    speed_topic: "motor/speed"
+    direction_topic: "motor/direction"
+    cmd_vel_topic: "cmd_vel"
+    status_speed_topic: "motor/status/speed"
+    status_direction_topic: "motor/status/direction"
+    
+    # Update Rates
+    status_publish_rate: 10.0  # Hz
+    control_loop_rate: 50.0    # Hz
+    
+    # Debugging
+    debug_mode: false
+    verbose_logging: false 

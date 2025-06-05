@@ -1,0 +1,4 @@
+RPi.GPIO>=0.7.0
+rclpy
+std_msgs
+geometry_msgs 
