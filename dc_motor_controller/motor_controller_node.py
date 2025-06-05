@@ -22,6 +22,7 @@ class DCMotorController(Node):
         self.PWM_FREQUENCY = 1000  # 1kHz
         self.current_speed = 0.0
         self.current_direction = True  # True = Forward, False = Backward
+        self.motor_enabled = False  # มอเตอร์จะหมุนเฉพาะเมื่อได้รับคำสั่ง
         
         # Initialize GPIO
         self.setup_gpio()
@@ -70,7 +71,7 @@ class DCMotorController(Node):
             
             # Setup direction pin
             GPIO.setup(self.DIR_PIN, GPIO.OUT)
-            GPIO.output(self.DIR_PIN, GPIO.HIGH)  # Default forward direction
+            GPIO.output(self.DIR_PIN, GPIO.LOW)  # เริ่มต้นด้วยการหยุดมอเตอร์
             
             # Setup PWM pin
             GPIO.setup(self.PWM_PIN, GPIO.OUT)
@@ -86,12 +87,21 @@ class DCMotorController(Node):
         """Handle speed commands (0.0 to 100.0)"""
         speed = max(0.0, min(100.0, msg.data))  # Clamp between 0-100
         self.current_speed = speed
+        
+        # เปิดใช้งานมอเตอร์เฉพาะเมื่อมีความเร็ว > 0
+        self.motor_enabled = (speed > 0.0)
+        
         self.update_motor()
         self.get_logger().info(f'Received speed command: {speed}%')
         
     def direction_callback(self, msg):
         """Handle direction commands (True=Forward, False=Backward)"""
         self.current_direction = msg.data
+        
+        # เปิดใช้งานมอเตอร์เมื่อได้รับคำสั่งทิศทาง และมีความเร็ว > 0
+        if self.current_speed > 0.0:
+            self.motor_enabled = True
+        
         self.update_motor()
         direction_str = "Forward" if msg.data else "Backward"
         self.get_logger().info(f'Received direction command: {direction_str}')
@@ -108,6 +118,9 @@ class DCMotorController(Node):
         else:
             self.current_direction = False  # Backward
             self.current_speed = min(100.0, abs(linear_x) * 100.0)
+        
+        # เปิดใช้งานมอเตอร์เฉพาะเมื่อมีความเร็ว > 0
+        self.motor_enabled = (self.current_speed > 0.0)
             
         self.update_motor()
         self.get_logger().info(f'Twist command - Speed: {self.current_speed}%, Direction: {"Forward" if self.current_direction else "Backward"}')
@@ -115,11 +128,16 @@ class DCMotorController(Node):
     def update_motor(self):
         """Update motor PWM and direction based on current settings"""
         try:
-            # Set direction
-            GPIO.output(self.DIR_PIN, GPIO.HIGH if self.current_direction else GPIO.LOW)
-            
-            # Set PWM duty cycle
-            self.pwm.ChangeDutyCycle(self.current_speed)
+            if self.motor_enabled and self.current_speed > 0.0:
+                # Set direction เฉพาะเมื่อมอเตอร์ทำงาน
+                GPIO.output(self.DIR_PIN, GPIO.HIGH if self.current_direction else GPIO.LOW)
+                
+                # Set PWM duty cycle
+                self.pwm.ChangeDutyCycle(self.current_speed)
+            else:
+                # หยุดมอเตอร์ - ปิด PWM และ direction signal
+                GPIO.output(self.DIR_PIN, GPIO.LOW)
+                self.pwm.ChangeDutyCycle(0)
             
         except Exception as e:
             self.get_logger().error(f'Failed to update motor: {str(e)}')
@@ -139,6 +157,7 @@ class DCMotorController(Node):
     def stop_motor(self):
         """Emergency stop function"""
         self.current_speed = 0.0
+        self.motor_enabled = False
         self.update_motor()
         self.get_logger().info('Motor stopped')
         
