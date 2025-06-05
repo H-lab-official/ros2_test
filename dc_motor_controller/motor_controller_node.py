@@ -14,8 +14,8 @@ class DCMotorController(Node):
         super().__init__('dc_motor_controller')
         
         # GPIO Pin Configuration (BCM numbering)
-        self.PWM_PIN = 32  # GPIO 32 สำหรับ PWM
-        self.DIR_PIN = 33  # GPIO 33 สำหรับทิศทาง
+        self.PWM_PIN = 12   # Physical pin 32 = GPIO 12 (PWM0)
+        self.DIR_PIN = 13   # Physical pin 33 = GPIO 13 (PWM1)
         # Ground pin 25 จะต่อกับ GND ของมอเตอร์
         
         # PWM Parameters

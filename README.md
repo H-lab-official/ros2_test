@@ -14,19 +14,19 @@
 ## การเชื่อมต่อ Hardware
 
 ### GPIO Pin Configuration (BCM numbering)
-- **GPIO 32**: PWM output สำหรับควบคุมความเร็ว
-- **GPIO 33**: Direction control สำหรับควบคุมทิศทาง
-- **GPIO 25**: Ground reference (เชื่อมกับ GND ของมอเตอร์)
+- **Physical Pin 32 = GPIO 12**: PWM output สำหรับควบคุมความเร็ว (PWM0)
+- **Physical Pin 33 = GPIO 13**: Direction control สำหรับควบคุมทิศทาง (PWM1)
+- **Physical Pin 25 = GND**: Ground reference (เชื่อมกับ GND ของมอเตอร์)
 
 ### วงจร Motor Driver
 ```
-Raspberry Pi 4          Motor Driver          DC Motor
-GPIO 32 (PWM) ---------> PWM Input
-GPIO 33 (DIR) ---------> Direction Input
-GPIO 25 (GND) ---------> GND              --> Motor GND
-5V/3.3V ------------->  VCC
-                         Motor OUT+ --------> Motor +
-                         Motor OUT- --------> Motor -
+Raspberry Pi 4           Motor Driver          DC Motor
+Pin 32 (GPIO 12/PWM) --> PWM Input
+Pin 33 (GPIO 13/DIR) --> Direction Input
+Pin 25 (GND) ---------> GND              --> Motor GND
+5V/3.3V --------------> VCC
+                        Motor OUT+ --------> Motor +
+                        Motor OUT- --------> Motor -
 ```
 
 ## การติดตั้ง (Installation)
@@ -161,8 +161,8 @@ ros2 topic info /motor/speed
 ```yaml
 motor_controller:
   ros__parameters:
-    pwm_pin: 32              # GPIO pin สำหรับ PWM
-    direction_pin: 33        # GPIO pin สำหรับทิศทาง
+    pwm_pin: 12              # Physical pin 32 = GPIO 12 (PWM0)
+    direction_pin: 13        # Physical pin 33 = GPIO 13 (PWM1)
     pwm_frequency: 1000      # ความถี่ PWM (Hz)
     max_speed: 100.0         # ความเร็วสูงสุด (%)
 ```

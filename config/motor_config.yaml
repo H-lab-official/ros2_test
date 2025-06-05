@@ -2,8 +2,8 @@
 motor_controller:
   ros__parameters:
     # GPIO Pin Configuration (BCM numbering)
-    pwm_pin: 32          # GPIO pin for PWM control
-    direction_pin: 33    # GPIO pin for direction control
+    pwm_pin: 12          # Physical pin 32 = GPIO 12 (PWM0)
+    direction_pin: 13    # Physical pin 33 = GPIO 13 (PWM1)
     ground_pin: 25       # Ground reference pin
     
     # PWM Configuration
