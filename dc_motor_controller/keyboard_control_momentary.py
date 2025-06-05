@@ -130,13 +130,15 @@ class KeyboardControlMomentary(Node):
             
         elif key == '+' or key == '=':
             # เพิ่มความเร็วพื้นฐาน - ทำงานได้แม้ขณะกดปุ่มอื่น
+            old_speed = self.base_speed
             self.base_speed = min(self.max_speed, self.base_speed + self.speed_increment)
-            self.get_logger().info(f"⬆️ Speed UP: {self.base_speed}%")
+            self.get_logger().info(f"⬆️ Speed UP: {old_speed}% → {self.base_speed}% (W/S will use this speed)")
             
         elif key == '-' or key == '_':
             # ลดความเร็วพื้นฐาน - ทำงานได้แม้ขณะกดปุ่มอื่น
+            old_speed = self.base_speed
             self.base_speed = max(10.0, self.base_speed - self.speed_increment)
-            self.get_logger().info(f"⬇️ Speed DOWN: {self.base_speed}%")
+            self.get_logger().info(f"⬇️ Speed DOWN: {old_speed}% → {self.base_speed}% (W/S will use this speed)")
             
         elif key == '0':
             # รีเซ็ตความเร็วพื้นฐาน
@@ -169,11 +171,17 @@ class KeyboardControlMomentary(Node):
         should_move = 'w' in self.keys_pressed or 's' in self.keys_pressed
         
         if should_move:
+            # อัพเดท direction ตาม key ที่กดล่าสุด
+            if 'w' in self.keys_pressed:
+                self.current_direction = True
+            elif 's' in self.keys_pressed:
+                self.current_direction = False
+            
             if not self.is_moving:
                 self.is_moving = True
                 self.get_logger().info(f"Motor started - {('Forward' if self.current_direction else 'Backward')} at {self.base_speed}%")
             
-            # ส่งคำสั่งเคลื่อนที่
+            # ส่งคำสั่งเคลื่อนที่ - ใช้ base_speed เสมอ
             self.send_direction_command(self.current_direction)
             self.send_speed_command(self.base_speed)
             self.print_movement_status()
@@ -213,7 +221,7 @@ class KeyboardControlMomentary(Node):
         """แสดงสถานะขณะเคลื่อนที่"""
         direction_str = "🔼 FORWARD" if self.current_direction else "🔽 BACKWARD"
         keys_str = "W" if 'w' in self.keys_pressed else ("S" if 's' in self.keys_pressed else "")
-        print(f"\r🚗 MOVING {direction_str} | Speed: {self.base_speed:4.0f}% | Key: {keys_str} | +/- to change speed", end='', flush=True)
+        print(f"\r🚗 MOVING {direction_str} | Base Speed: {self.base_speed:4.0f}% | Key: {keys_str} | +/- = realtime speed change    ", end='', flush=True)
     
     def print_stopped_status(self):
         """แสดงสถานะขณะหยุด"""
