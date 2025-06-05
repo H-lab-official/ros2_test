@@ -40,8 +40,10 @@ class KeyboardControlMomentary(Node):
         
         # สำหรับ momentary control
         self.keys_pressed = set()  # เก็บปุ่มที่กดค้างอยู่
+        self.key_timestamps = {}   # เก็บเวลาที่กดปุ่มล่าสุด
         self.current_direction = True  # True = Forward, False = Backward
         self.is_moving = False
+        self.key_timeout = 0.2     # หากไม่มีการกดใน 200ms ถือว่าปล่อยแล้ว
         
         # สำหรับ keyboard input
         self.old_settings = None
@@ -54,8 +56,8 @@ class KeyboardControlMomentary(Node):
         self.keyboard_thread.daemon = True
         self.keyboard_thread.start()
         
-        # Timer สำหรับ check key state
-        self.control_timer = self.create_timer(0.1, self.update_motor_control)
+        # Timer สำหรับ check key state (ลด delay เหลือ 50ms)
+        self.control_timer = self.create_timer(0.005, self.update_motor_control)
         
     def print_instructions(self):
         """แสดงคำแนะนำการใช้งาน"""
@@ -95,14 +97,14 @@ class KeyboardControlMomentary(Node):
         try:
             while self.is_running:
                 try:
-                    # ใช้ select เพื่อตรวจสอบว่ามี input หรือไม่
-                    if select.select([sys.stdin], [], [], 0.05)[0]:
+                    # ใช้ select เพื่อตรวจสอบว่ามี input หรือไม่ (ลด timeout เหลือ 10ms)
+                    if select.select([sys.stdin], [], [], 0.01)[0]:
                         key = sys.stdin.read(1)
                         if key:
                             self.process_key_press(key)
-                    else:
-                        # ไม่มี input ใหม่ = ปล่อยปุ่มแล้ว
-                        self.handle_no_input()
+                    
+                    # ตรวจสอบ key release ทุก cycle
+                    self.check_key_release()
                         
                 except Exception as e:
                     self.get_logger().error(f"Keyboard input error: {e}")
@@ -114,34 +116,32 @@ class KeyboardControlMomentary(Node):
     def process_key_press(self, key):
         """ประมวลผล key press"""
         key_lower = key.lower()
+        current_time = time.time()
         
         if key_lower == 'w':
             self.keys_pressed.add('w')
+            self.key_timestamps['w'] = current_time
             self.current_direction = True
-            self.get_logger().info("Forward key pressed")
             
         elif key_lower == 's':
             self.keys_pressed.add('s')
+            self.key_timestamps['s'] = current_time
             self.current_direction = False
-            self.get_logger().info("Backward key pressed")
             
         elif key == '+' or key == '=':
-            # เพิ่มความเร็วพื้นฐาน
+            # เพิ่มความเร็วพื้นฐาน - ทำงานได้แม้ขณะกดปุ่มอื่น
             self.base_speed = min(self.max_speed, self.base_speed + self.speed_increment)
-            self.get_logger().info(f"Base speed increased to: {self.base_speed}%")
-            self.print_speed_status()
+            self.get_logger().info(f"⬆️ Speed UP: {self.base_speed}%")
             
         elif key == '-' or key == '_':
-            # ลดความเร็วพื้นฐาน
+            # ลดความเร็วพื้นฐาน - ทำงานได้แม้ขณะกดปุ่มอื่น
             self.base_speed = max(10.0, self.base_speed - self.speed_increment)
-            self.get_logger().info(f"Base speed decreased to: {self.base_speed}%")
-            self.print_speed_status()
+            self.get_logger().info(f"⬇️ Speed DOWN: {self.base_speed}%")
             
         elif key == '0':
             # รีเซ็ตความเร็วพื้นฐาน
             self.base_speed = 30.0
-            self.get_logger().info(f"Base speed reset to: {self.base_speed}%")
-            self.print_speed_status()
+            self.get_logger().info(f"🔄 Speed RESET: {self.base_speed}%")
             
         elif key_lower == 'q':
             # ออกจากโปรแกรม
@@ -150,12 +150,19 @@ class KeyboardControlMomentary(Node):
             self.is_running = False
             rclpy.shutdown()
     
-    def handle_no_input(self):
-        """จัดการเมื่อไม่มี input (ปล่อยปุ่มแล้ว)"""
-        # Clear keys pressed สำหรับ movement keys
-        if 'w' in self.keys_pressed or 's' in self.keys_pressed:
-            self.keys_pressed.discard('w')
-            self.keys_pressed.discard('s')
+    def check_key_release(self):
+        """ตรวจสอบว่าปุ่มใดถูกปล่อยแล้ว (timeout-based detection)"""
+        current_time = time.time()
+        keys_to_remove = []
+        
+        for key in ['w', 's']:
+            if key in self.key_timestamps:
+                if current_time - self.key_timestamps[key] > self.key_timeout:
+                    keys_to_remove.append(key)
+        
+        for key in keys_to_remove:
+            self.keys_pressed.discard(key)
+            del self.key_timestamps[key]
     
     def update_motor_control(self):
         """อัพเดทการควบคุมมอเตอร์ตาม key state"""
@@ -205,7 +212,8 @@ class KeyboardControlMomentary(Node):
     def print_movement_status(self):
         """แสดงสถานะขณะเคลื่อนที่"""
         direction_str = "🔼 FORWARD" if self.current_direction else "🔽 BACKWARD"
-        print(f"\r🚗 MOVING {direction_str} | Speed: {self.base_speed:4.0f}% | Base Speed: {self.base_speed:4.0f}%    ", end='', flush=True)
+        keys_str = "W" if 'w' in self.keys_pressed else ("S" if 's' in self.keys_pressed else "")
+        print(f"\r🚗 MOVING {direction_str} | Speed: {self.base_speed:4.0f}% | Key: {keys_str} | +/- to change speed", end='', flush=True)
     
     def print_stopped_status(self):
         """แสดงสถานะขณะหยุด"""
