@@ -14,11 +14,28 @@
 ## การเชื่อมต่อ Hardware
 
 ### GPIO Pin Configuration (BCM numbering)
+
+#### สำหรับ Simple Motor Driver:
 - **Physical Pin 32 = GPIO 12**: PWM output สำหรับควบคุมความเร็ว (PWM0)
 - **Physical Pin 33 = GPIO 13**: Direction control สำหรับควบคุมทิศทาง (PWM1)
 - **Physical Pin 25 = GND**: Ground reference (เชื่อมกับ GND ของมอเตอร์)
 
+#### สำหรับ H-Bridge Motor Driver (Vichagorn):
+**Hardware PWM Pins available:** GPIO 12, 13, 18, 19
+
+**Motor A:**
+- **Physical Pin 32 = GPIO 12**: ENA (Hardware PWM0)
+- **Physical Pin 33 = GPIO 13**: IN1 (Direction control)
+- **Physical Pin 35 = GPIO 19**: IN2 (Direction control)
+
+**Motor B (รองรับในอนาคต):**
+- **Physical Pin 12 = GPIO 18**: ENB (Hardware PWM1)
+- **Physical Pin 37 = GPIO 26**: IN3 (Direction control)
+- **Physical Pin 38 = GPIO 20**: IN4 (Direction control)
+
 ### วงจร Motor Driver
+
+#### Simple Motor Driver:
 ```
 Raspberry Pi 4           Motor Driver          DC Motor
 Pin 32 (GPIO 12/PWM) --> PWM Input
@@ -27,6 +44,22 @@ Pin 25 (GND) ---------> GND              --> Motor GND
 5V/3.3V --------------> VCC
                         Motor OUT+ --------> Motor +
                         Motor OUT- --------> Motor -
+```
+
+#### H-Bridge Motor Driver (Vichagorn):
+```
+Raspberry Pi 4           H-Bridge Driver       Motors
+Pin 32 (GPIO 12) -----> ENA (Hardware PWM0) --> Motor A Speed
+Pin 33 (GPIO 13) -----> IN1              --> Motor A Dir
+Pin 35 (GPIO 19) -----> IN2              --> Motor A Dir
+Pin 12 (GPIO 18) -----> ENB (Hardware PWM1) --> Motor B Speed  
+Pin 37 (GPIO 26) -----> IN3              --> Motor B Dir
+Pin 38 (GPIO 20) -----> IN4              --> Motor B Dir
+Pin 25 (GND) ---------> GND              --> Common GND
+5V ----------------> +5V (Logic Power)
+12V/24V ------------> VCC (Motor Power)
+                        OUT1/OUT2 ---------> Motor A (+/-)
+                        OUT3/OUT4 ---------> Motor B (+/-)
 ```
 
 ## การติดตั้ง (Installation)
@@ -78,11 +111,14 @@ source install/setup.bash
 # Source environment
 source ~/ros2_ws/install/setup.bash
 
-# รัน motor controller node
-ros2 run dc_motor_controller motor_controller_node
+# สำหรับ Simple Motor Driver
+sudo /usr/local/bin/ros2-sudo run dc_motor_controller motor_controller_node
+
+# สำหรับ H-Bridge Motor Driver (แนะนำ)
+sudo /usr/local/bin/ros2-sudo run dc_motor_controller h_bridge_motor_controller
 
 # หรือใช้ launch file
-ros2 launch dc_motor_controller motor_launch.py
+sudo /usr/local/bin/ros2-sudo launch dc_motor_controller motor_launch.py
 ```
 
 ### 2. รัน Keyboard Control (ควบคุมด้วยคีย์บอร์ด)

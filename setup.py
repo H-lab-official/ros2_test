@@ -25,6 +25,7 @@ setup(
             'motor_controller_node = dc_motor_controller.motor_controller_node:main',
             'motor_test_node = dc_motor_controller.motor_test_node:main',
             'keyboard_control_node = dc_motor_controller.keyboard_control_node:main',
+            'h_bridge_motor_controller = dc_motor_controller.h_bridge_motor_controller:main',
         ],
     },
     python_requires='>=3.6',
