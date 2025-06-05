@@ -26,4 +26,5 @@ setup(
             'motor_test_node = dc_motor_controller.motor_test_node:main',
         ],
     },
+    python_requires='>=3.6',
 ) 
