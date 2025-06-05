@@ -31,30 +31,30 @@ class DCMotorController(Node):
             Float32,
             'motor/speed',
             self.speed_callback,
-            10)
+            0)
         
         self.direction_subscription = self.create_subscription(
             Bool,
             'motor/direction',
             self.direction_callback,
-            10)
+            0)
             
         self.twist_subscription = self.create_subscription(
             Twist,
             'cmd_vel',
             self.twist_callback,
-            10)
+            0)
         
         # ROS2 Publishers for status
         self.status_publisher = self.create_publisher(
             Float32,
             'motor/status/speed',
-            10)
+            0)
         
         self.direction_status_publisher = self.create_publisher(
             Bool,
             'motor/status/direction',
-            10)
+            0)
         
         # Status publishing timer
         self.status_timer = self.create_timer(0.1, self.publish_status)

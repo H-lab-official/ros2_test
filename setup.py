@@ -10,7 +10,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        ('share/' + package_name + '/launch', ['launch/motor_launch.py']),
+        ('share/' + package_name + '/launch', ['launch/motor_launch.py', 'launch/motor_keyboard_launch.py']),
         ('share/' + package_name + '/config', ['config/motor_config.yaml']),
     ],
     install_requires=['setuptools'],
@@ -24,6 +24,7 @@ setup(
         'console_scripts': [
             'motor_controller_node = dc_motor_controller.motor_controller_node:main',
             'motor_test_node = dc_motor_controller.motor_test_node:main',
+            'keyboard_control_node = dc_motor_controller.keyboard_control_node:main',
         ],
     },
     python_requires='>=3.6',

@@ -85,7 +85,25 @@ ros2 run dc_motor_controller motor_controller_node
 ros2 launch dc_motor_controller motor_launch.py
 ```
 
-### 2. รัน Test Node (สำหรับทดสอบ)
+### 2. รัน Keyboard Control (ควบคุมด้วยคีย์บอร์ด)
+
+```bash
+# รัน keyboard control พร้อม motor controller
+sudo /usr/local/bin/ros2-sudo launch dc_motor_controller motor_keyboard_launch.py
+
+# หรือรันแยกในเทอร์มินัลต่างหาก
+sudo /usr/local/bin/ros2-sudo run dc_motor_controller keyboard_control_node
+```
+
+**การใช้งาน Keyboard Control:**
+- **W/w** : เดินหน้า (Forward)
+- **S/s** : ถอยหลัง (Backward)  
+- **+** : เพิ่มความเร็ว (+5%)
+- **-** : ลดความเร็ว (-5%)
+- **0** : หยุดมอเตอร์ (Stop)
+- **Q/q** : ออกจากโปรแกรม (Quit)
+
+### 3. รัน Test Node (สำหรับทดสอบ)
 
 ```bash
 # รัน test node ในเทอร์มินัลแยก
