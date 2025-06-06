@@ -134,12 +134,13 @@ class HBridgeMotorController(Node):
         """Handle Twist messages from cmd_vel topic"""
         linear_x = msg.linear.x
         
+        # แก้ไข: คำนวณความเร็วและทิศทางจาก linear_x อย่างถูกต้อง
         if linear_x >= 0:
             self.current_direction = True  # Forward
-            self.current_speed = min(100.0, abs(linear_x) * 100.0)
+            self.current_speed = min(100.0, linear_x * 100.0)  # แปลงกลับเป็น % โดยไม่ใช้ abs()
         else:
             self.current_direction = False  # Backward
-            self.current_speed = min(100.0, abs(linear_x) * 100.0)
+            self.current_speed = min(100.0, abs(linear_x) * 100.0)  # ใช้ abs() เฉพาะกับค่าลบ
             
         self.update_motor()
         self.get_logger().info(f'Twist command - Speed: {self.current_speed}%, Direction: {"Forward" if self.current_direction else "Backward"}')

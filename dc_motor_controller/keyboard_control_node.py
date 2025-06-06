@@ -164,12 +164,12 @@ class KeyboardControlNode(Node):
         msg.data = speed
         self.speed_publisher.publish(msg)
         
-        # ส่งผ่าน cmd_vel ด้วย
+        # ส่งผ่าน cmd_vel ด้วย - แก้ไขการคำนวณ
         twist_msg = Twist()
         if self.current_direction:
-            twist_msg.linear.x = speed / 100.0  # แปลงเป็น 0-1
+            twist_msg.linear.x = speed / 100.0  # Forward: บวก
         else:
-            twist_msg.linear.x = -speed / 100.0  # ค่าลบสำหรับถอยหลัง
+            twist_msg.linear.x = -(speed / 100.0)  # Backward: ลบ
         self.twist_publisher.publish(twist_msg)
     
     def send_direction_command(self, forward):

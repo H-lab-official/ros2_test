@@ -45,6 +45,10 @@ class KeyboardControlMomentary(Node):
         self.is_moving = False
         self.key_timeout = 0.2     # หากไม่มีการกดใน 200ms ถือว่าปล่อยแล้ว
         
+        # เก็บสถานะล่าสุดเพื่อป้องกันการส่งซ้ำ
+        self.last_sent_speed = 0.0
+        self.last_sent_direction = True
+        
         # สำหรับ keyboard input
         self.old_settings = None
         
@@ -177,13 +181,22 @@ class KeyboardControlMomentary(Node):
             elif 's' in self.keys_pressed:
                 self.current_direction = False
             
-            if not self.is_moving:
-                self.is_moving = True
-                self.get_logger().info(f"Motor started - {('Forward' if self.current_direction else 'Backward')} at {self.base_speed}%")
+            # ส่งคำสั่งเฉพาะเมื่อมีการเปลี่ยนแปลง
+            if (self.base_speed != self.last_sent_speed or 
+                self.current_direction != self.last_sent_direction or 
+                not self.is_moving):
+                
+                # ส่งคำสั่งแบบ atomic - direction และ speed พร้อมกัน
+                self.send_motor_command(self.base_speed, self.current_direction)
+                
+                # อัพเดทสถานะล่าสุด
+                self.last_sent_speed = self.base_speed
+                self.last_sent_direction = self.current_direction
+                
+                if not self.is_moving:
+                    self.is_moving = True
+                    self.get_logger().info(f"Motor started - {('Forward' if self.current_direction else 'Backward')} at {self.base_speed}%")
             
-            # ส่งคำสั่งเคลื่อนที่ - ใช้ base_speed เสมอ
-            self.send_direction_command(self.current_direction)
-            self.send_speed_command(self.base_speed)
             self.print_movement_status()
             
         else:
@@ -193,22 +206,35 @@ class KeyboardControlMomentary(Node):
                 self.stop_motor()
                 self.print_stopped_status()
     
+    def send_motor_command(self, speed, direction):
+        """ส่งคำสั่งมอเตอร์แบบ atomic - speed และ direction พร้อมกัน"""
+        # ส่งทิศทางก่อน
+        direction_msg = Bool()
+        direction_msg.data = direction
+        self.direction_publisher.publish(direction_msg)
+        
+        # ส่งความเร็วทันที
+        speed_msg = Float32()
+        speed_msg.data = speed
+        self.speed_publisher.publish(speed_msg)
+        
+        # ส่งผ่าน cmd_vel ด้วย (integrated command)
+        # แก้ไข: ใช้ speed/100.0 สำหรับทิศทางไปข้างหน้า และ -(speed/100.0) สำหรับถอยหลัง
+        twist_msg = Twist()
+        if direction:
+            twist_msg.linear.x = speed / 100.0  # Forward: บวก
+        else:
+            twist_msg.linear.x = -(speed / 100.0)  # Backward: ลบ
+        self.twist_publisher.publish(twist_msg)
+    
     def send_speed_command(self, speed):
-        """ส่งคำสั่งความเร็ว"""
+        """ส่งคำสั่งความเร็ว (backward compatibility)"""
         msg = Float32()
         msg.data = speed
         self.speed_publisher.publish(msg)
-        
-        # ส่งผ่าน cmd_vel ด้วย
-        twist_msg = Twist()
-        if self.current_direction:
-            twist_msg.linear.x = speed / 100.0  # แปลงเป็น 0-1
-        else:
-            twist_msg.linear.x = -speed / 100.0  # ค่าลบสำหรับถอยหลัง
-        self.twist_publisher.publish(twist_msg)
     
     def send_direction_command(self, forward):
-        """ส่งคำสั่งทิศทาง"""
+        """ส่งคำสั่งทิศทาง (backward compatibility)"""
         msg = Bool()
         msg.data = forward
         self.direction_publisher.publish(msg)
@@ -216,6 +242,9 @@ class KeyboardControlMomentary(Node):
     def stop_motor(self):
         """หยุดมอเตอร์"""
         self.send_speed_command(0.0)
+        
+        # อัพเดทสถานะล่าสุด
+        self.last_sent_speed = 0.0
         
     def print_movement_status(self):
         """แสดงสถานะขณะเคลื่อนที่"""

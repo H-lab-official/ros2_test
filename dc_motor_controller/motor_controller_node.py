@@ -112,12 +112,13 @@ class DCMotorController(Node):
         # Assuming max velocity of 1.0 m/s corresponds to 100% speed
         linear_x = msg.linear.x
         
+        # แก้ไข: คำนวณความเร็วและทิศทางจาก linear_x อย่างถูกต้อง
         if linear_x >= 0:
             self.current_direction = True  # Forward
-            self.current_speed = min(100.0, abs(linear_x) * 100.0)
+            self.current_speed = min(100.0, linear_x * 100.0)  # แปลงกลับเป็น % โดยไม่ใช้ abs()
         else:
             self.current_direction = False  # Backward
-            self.current_speed = min(100.0, abs(linear_x) * 100.0)
+            self.current_speed = min(100.0, abs(linear_x) * 100.0)  # ใช้ abs() เฉพาะกับค่าลบ
         
         # เปิดใช้งานมอเตอร์เฉพาะเมื่อมีความเร็ว > 0
         self.motor_enabled = (self.current_speed > 0.0)
